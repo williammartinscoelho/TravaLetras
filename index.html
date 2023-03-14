@@ -1,12 +1,201 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-br">
+
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+    <title>Trava Letras</title>
+    <style>
+        * {
+            font-family: Arial, Helvetica, sans-serif;
+        }
+
+        html, body {
+            margin: 0;
+            padding: 0;
+        }
+
+        .container {
+            display: flex;
+            height: 100vh;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        .box-timer {
+            font-size: 75px;
+            color: #fff;
+        }
+
+        .box-itens {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .theme {
+            color: #FFF;
+            font-size: 50px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        label {
+            color: #FFF;
+            text-align: center;
+        }
+
+        input {
+            font-size: 75px;
+            width: 200px;
+            background-color: transparent;
+            border: none;
+            color: #FFF;
+            text-align: center;
+        }
+
+        button {
+            background-color: #F51B4B;
+            height: 50px;
+            border: none;
+            color: #FFF;
+            font-weight: bold;
+            font-size: 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-bottom: 15px;
+        }
+
+        .btn-inative {
+            opacity: 0.5;
+        }
+
+        .game-over {
+            font-size: 40px;
+            color: #FFF;
+        }
+    </style>
 </head>
+
 <body>
-    Teste Pages
+    <div id="app">
+        <div class="container" @click="resetTimer" :style="style">
+            <div v-if="running" class="box-timer">
+                {{ formatedSeconds }}
+            </div>
+
+            <div v-else class="box-itens">
+                <div class="theme">{{ themeSelected }}</div>
+                <button @click="selectRandomItem">Sortear um tema</button>
+
+                <label for="time">Tempo (sec)</label>
+                <input type="text" v-model="time" @input="validateInput">
+
+                <button @click="play" :class="{ 'btn-inative' : !themeSelected }" :disabled="!themeSelected">
+                    INICIAR
+                </button>
+            </div>
+
+            <div v-if="gameOver" class="game-over">
+                <div>ACABOU O TEMPO</div>
+            </div>
+        </div>
+    </div>
 </body>
+<script>
+    const timerSound = new Audio('../assets/interface-124464.mp3');
+    const gameOverSound = new Audio('../assets/wah-wah-sad-trombone-6347.mp3')
+    const passSound = new Audio('../assets/announcement-sound-4-21464.mp3')
+
+    var app = new Vue({
+        el: '#app',
+        data: {
+            time: 5,
+            timer: 0,
+            interval: null,
+            running: false,
+            gameOver: false,
+            themes: [
+                'Futebol',
+                'Cinema',
+                'Heróis',
+                'Nomes',
+            ],
+            themeSelected: null
+        },
+        computed: {
+            style() {
+                if (!this.running) return { background: `#354051` }
+
+                const percent = (this.timer / this.time) * 100
+                return {
+                    background: `linear-gradient(90deg, #F51B4B ${percent}%, #354051 ${percent}%)`
+                }
+            },
+            formatedSeconds() {
+                const seconds = this.timer
+                const minutes = Math.floor(seconds / 60);
+                const remainingSeconds = seconds % 60;
+                const formattedMinutes = String(minutes).padStart(2, '0');
+                const formattedSeconds = String(remainingSeconds).padStart(2, '0');
+                return `${formattedMinutes}:${formattedSeconds}`;
+            }
+        },
+        methods: {
+            play() {
+                this.running = true
+                this.timer = this.time
+
+                this.interval = setInterval(() => {
+                    this.timer = this.timer - 1
+
+                    if (this.timer > 0) this.playTimerSound()
+
+                    if (this.timer === 0) {
+                        this.playGameOverSound()
+                        clearInterval(this.interval)
+                        this.gameOver = true
+
+                        setTimeout(() => {
+                            this.running = false
+                            this.gameOver = false
+                        }, 5000)
+                    }
+                }, 1000)
+            },
+            resetTimer() {
+                if (!this.running || this.gameOver) return
+                this.playPassSound()
+                this.timer = this.time
+                clearInterval(this.interval)
+                this.play()
+            },
+            validateInput() {
+                // Remove qualquer caractere não numérico do valor do input
+                this.time = this.time.replace(/[^0-9]/g, '');
+            },
+            selectRandomItem() {
+                const randomIndex = Math.floor(Math.random() * this.themes.length);
+                this.themeSelected = this.themes[randomIndex];
+            },
+            playTimerSound() {
+                timerSound.currentTime = 0;
+                timerSound.volume = 1;
+                timerSound.play();
+            },
+            playGameOverSound() {
+                gameOverSound.currentTime = 0;
+                gameOverSound.volume = 1;
+                gameOverSound.play();
+            },
+            playPassSound() {
+                passSound.currentTime = 0;
+                passSound.volume = 1;
+                passSound.play();
+            }
+        }
+    })
+</script>
 </html>
